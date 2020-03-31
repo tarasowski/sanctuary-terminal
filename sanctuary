@@ -5,19 +5,26 @@
 
 LATEST="https://raw.githubusercontent.com/tarasowski/sanctuary-terminal/master/sanctuary-json-docs.json"
 DOCS_URL="https://sanctuary.js.org/"
+bold=$(tput bold)
+normal=$(tput sgr0)
 
-json=$(curl -s $LATEST)
+#json=$(curl -s $LATEST)
+json=$(cat docs.json | jq .)
 functions=$(echo "$json" | jq -r '.[] | if .sig and (.sig | length > 0) then .name + " :: " + .sig else .name end')
 fn=$(echo "$functions" | fzf --reverse) || exit 0
 fn_name=$(echo $fn | awk '{print $1}')
 desc=$(echo "$json" | jq -r ".[] | select(.name == \"$fn_name\") | .description" | fmt)
+examples=$(echo "$json" | jq -r ".[] | select(.name == \"$fn_name\") | .examples" | fmt)
 docs_url="$DOCS_URL#$fn_name"
 
-echo "$fn"
+echo
+echo "${bold}$fn${normal}"
 echo
 echo "$desc"
+echo "$examples" |  jq -r '(["",""] | (., map(length*"-"))), (.[] | ["> " + .input + "  ->", .output]) | @tsv'
 echo
 echo "$docs_url"
+echo
 
 # Open URL in browser
 # open $docs_url     # mac
